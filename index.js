@@ -33,8 +33,9 @@ app.use(require('./Routes/routes'))
 // app.use(cookieParser())
 
 
-
-
+app.get('/', (req,res)=>{
+    res.send("Home");
+});
 app.listen(PORT,()=>{
     console.log(`Listening on Port: ${PORT}`)
 })

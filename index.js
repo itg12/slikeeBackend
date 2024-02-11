@@ -18,7 +18,7 @@ app.use(cors({
 
 const dotenv = require('dotenv')
 dotenv.config({path: './config.env'})
-const PORT = process.env.PORT
+const PORT = process.env.PORT || 7335
 
 // Database configuration
 

@@ -124,8 +124,8 @@ router.post("/login", async (req,res)=>{
             await userAuth.save()
             
 
-            return res
-            .status(200)    
+             return res
+            .status(200)  
             .json({Token:Token})
         }  
     }catch(err){
@@ -259,7 +259,7 @@ router.post("/BookingRoom", async (req,res)=>{
 
         if(!req.headers.token){
             console.log("Kindly First Login your account")
-            return res.status(404).json({message:"Kindly First Login your Account."})
+            return res.status(401).json({message:"Kindly First Login your Account."})
         }
 
         // Verifying the JWT Token
@@ -274,6 +274,9 @@ router.post("/BookingRoom", async (req,res)=>{
             return res.status(400).json({message:"Please fill the field properly"})
         }
 
+        if(from>to){
+            return res.status(402).json({message:"From should be less than To"})
+        }
 
         // Save the data in particular schema
 
@@ -408,30 +411,45 @@ router.post("/CancelBooking", async (req,res)=>{
         
         if(!RoomId || !BookingId){
             return res.status(502).json({message:"Please fill the field properly"})
-        }else{
-            // Verifying the JWT Token
+        }
+        
+        // Verifying the JWT Token
 
-            const decode = await jwt.verify(token, process.env.SECRET_KEY)
-            const user = decode.user.id 
+        const decode = await jwt.verify(token, process.env.SECRET_KEY)
+        const user = decode.user.id 
 
-            // Finding the user by JWT Token
-            const findLoggedInUser = await User.findOne({_id:user})
+        // Finding the user by JWT Token
+        const findLoggedInUser = await User.findOne({_id:user})
 
-            // Remove the Booking from the User Bookings Section.
-            await findLoggedInUser.bookings.remove(RoomId)
-            const saveUser = await findLoggedInUser.save()
 
-            // // Remove the Bookings from the User Bookings Collection.
-            // const deleteBooking = await Bookings.findOne({_id:BookingId})
-            // const saveBookings = await deleteBooking.save()
 
-            if(saveUser){
-                return res.status(200).json({message:"Cancle Booking Successfully"})
-            }
-    }
+        //Remove the Booking from the User Bookings Section.
+        const bookingIds = findLoggedInUser.bookings
+
+        let saveUser=false
+
+        for(let i=0;i<bookingIds.length; i++){
+                if(bookingIds[i]===RoomId){
+                      await findLoggedInUser.bookings.remove(RoomId)          
+                      await findLoggedInUser.save()
+                      saveUser=true
+                }
+        }
+
+        // Remove the Bookings from the User Bookings Collection.
+        const deleteBooking = await Bookings.findByIdAndDelete({_id:BookingId})
+
+
+        // Finally Sending the Response
+        if(saveUser===true && deleteBooking){
+            return res.status(200).json({message:"Cancle Booking Successfully"})
+        }
+        
     } catch (error) {
         return res.send("Some Error Occured", error)
     }
 })
+
+
 
 module.exports = router
